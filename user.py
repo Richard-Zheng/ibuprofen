@@ -21,7 +21,7 @@ class User:
         self.soap_url = soap_url
         self.user_classes = user_classes
         self.data_path = Path(data_dir, 'user_'+self.uid+'.txt')
-        self.index_html_path = Path(output_dir, 'index_'+self.uid+'.html')
+        self.index_html_path = Path(output_dir, 'index.html')
 
     def generate_index_html(self):
         a = Airium()
