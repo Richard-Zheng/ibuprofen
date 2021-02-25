@@ -26,3 +26,5 @@ python user.py -p 123456 100000@xxx.lexuewang.cn:8003
 我写了一个简单的静态HTML生成器，并且在 Github Actions 中抓取数据、生成HTML并上传。
 
 要使用，请 Fork 此 repo ，然后在 Settings/secrets 中设置 Name 为 `ARGS` ，Value 为 `-p 密码 账号` 的 Repository secret。
+
+之后在 Actions 这个 tab 中选择 Generate HTMLs and upload ，然后 run workflow 即可
