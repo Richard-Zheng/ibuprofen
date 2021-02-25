@@ -29,7 +29,7 @@ class User:
         with a.html(lang="zh-Hans"):
             with a.head():
                 a.meta(charset="utf-8")
-                a.title(_t='ibuprofen: ' + self.uid)
+                a.title(_t='ibuprofen')
             with a.body():
                 for user_class in self.user_classes:
                     with a.p():
@@ -38,10 +38,10 @@ class User:
         return str(a)
 
     def generate_all_html(self):
-        with self.index_html_path.open(mode='w') as f:
+        with self.index_html_path.open(mode='w', encoding='utf-8') as f:
             f.write(self.generate_index_html())
         for c in self.user_classes:
-            with c.html_path.open(mode='w') as f:
+            with c.html_path.open(mode='w', encoding='utf-8') as f:
                 f.write(c.generate_html())
 
 async def get_user(session: aiohttp.ClientSession, uid: str, soap_url: str):
@@ -102,7 +102,7 @@ class UserClass:
                             continue
                         with a.a(href=resource['fileURI']):
                             a(resource['title'])
-                        a(' ')
+                        a.br()
         return str(a)
 
     def get_data_path(self):
@@ -129,9 +129,7 @@ class UserClass:
             szReturnXML += generate_szReturnXML(new_lessons_schedules)
             for schedule in new_lessons_schedules:
                 tasks.append(asyncio.get_running_loop().create_task(self.get_lessons_schedule_details(schedule)))
-            #tasks.append(asyncio.get_running_loop().create_task(pull_records_details(session, self.soap_url, new_lessons_schedules)))
             self.lessons_schedules += new_lessons_schedules
-            print(str(len(self.lessons_schedules)))
         if tasks:
             await asyncio.wait(tasks)
 
