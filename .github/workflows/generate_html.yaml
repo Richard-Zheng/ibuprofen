@@ -1,6 +1,6 @@
 name: Generate HTMLs and upload
 
-on: [push]
+on: [push, workflow_dispatch]
 
 jobs:
   build:

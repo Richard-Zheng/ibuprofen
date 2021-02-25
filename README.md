@@ -20,3 +20,9 @@ python user.py -p 123456 100000@xxx.lexuewang.cn:8003
 ## 为什么这么快？
 
 使用了 Python 原生协程实现 asyncio 及第三方网络库 aiohttp ，充分发挥异步 I/O 优势。
+
+## 应用
+
+我写了一个简单的静态HTML生成器，并且在 Github Actions 中抓取数据、生成HTML并上传。
+
+要使用，请 Fork 此 repo ，然后在 Settings/secrets 中设置 Name 为 `ARGS` ，Value 为 `-p 密码 账号` 的 Repository secret。
