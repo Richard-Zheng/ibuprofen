@@ -25,3 +25,4 @@ jobs:
       with:
           name: output
           path: opt/*.*
+          retention-days: 1
