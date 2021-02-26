@@ -8,6 +8,7 @@ from airium import Airium
 import xml.etree.ElementTree as ET
 
 import soap
+import config
 
 data_dir = Path('data')
 output_dir = Path('opt')
@@ -64,7 +65,7 @@ async def login(session: aiohttp.ClientSession, uid: str, soap_url: str, passwor
         login_data_text = await soap.request_for_text(session, soap_url, 'UsersLoginJson', {
             'lpszUserName': uid,
             'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
-            'lpszHardwareKey': "ClientVersion: 5.2.3.52390\nAppKey: MyiPad",
+            'lpszHardwareKey': config.HARDWARE_KEY,
         })
         with p.open(mode='w') as f:
             f.write(login_data_text)
