@@ -9,11 +9,10 @@ import xml.etree.ElementTree as ET
 
 import soap
 import config
+import export
 
 data_dir = Path('data')
-output_dir = Path('opt')
 data_dir.mkdir(parents=True, exist_ok=True)
-output_dir.mkdir(parents=True, exist_ok=True)
 
 class User:
     def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str, user_classes: list):
@@ -22,28 +21,6 @@ class User:
         self.soap_url = soap_url
         self.user_classes = user_classes
         self.data_path = Path(data_dir, 'user_'+self.uid+'.txt')
-        self.index_html_path = Path(output_dir, 'index.html')
-
-    def generate_index_html(self):
-        a = Airium()
-        a('<!DOCTYPE html>')
-        with a.html(lang="zh-Hans"):
-            with a.head():
-                a.meta(charset="utf-8")
-                a.title(_t='ibuprofen')
-            with a.body():
-                for user_class in self.user_classes:
-                    with a.p():
-                        with a.a(href='user_class_' + user_class.guid  + '.html'):
-                            a(user_class.name)
-        return str(a)
-
-    def generate_all_html(self):
-        with self.index_html_path.open(mode='w', encoding='utf-8') as f:
-            f.write(self.generate_index_html())
-        for c in self.user_classes:
-            with c.html_path.open(mode='w', encoding='utf-8') as f:
-                f.write(c.generate_html())
 
 async def get_user(session: aiohttp.ClientSession, uid: str, soap_url: str):
     user = User(session, uid, soap_url, [])
@@ -81,30 +58,6 @@ class UserClass:
         self.uid = uid
         self.soap_url = soap_url
         self.name = name
-        self.html_path = Path(output_dir, 'user_class_'+self.guid+'.html')
-
-    def generate_html(self):
-        a = Airium()
-        a('<!DOCTYPE html>')
-        with a.html(lang="zh-Hans"):
-            with a.head():
-                a.meta(charset="utf-8")
-                a.title(_t=self.name)
-            with a.body():
-                for record in reversed(self.lessons_schedules):
-                    if not 'title' in record:
-                        continue
-                    with a.p():
-                        a(record['title'])
-                        with a.i(style="font-size:3px;"):
-                            a(record['guid'])
-                    for resource in record['RefrenceResource']:
-                        if not 'fileURI' in resource:
-                            continue
-                        with a.a(href=resource['fileURI']):
-                            a(resource['title'])
-                        a.br()
-        return str(a)
 
     def get_data_path(self):
         return Path(data_dir, 'user_class_'+self.guid+'.txt')
@@ -205,7 +158,7 @@ async def main(args):
         for c in user.user_classes:
             tasks.append(asyncio.create_task(c.fetch_lessons_schedules()))
         await asyncio.wait(tasks)
-        user.generate_all_html()
+        export.StaticHtmlGenerator(user).generate_all_html()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
