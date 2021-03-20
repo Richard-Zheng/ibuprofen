@@ -7,8 +7,8 @@ output_dir = Path('opt')
 output_dir.mkdir(parents=True, exist_ok=True)
 
 class StaticHtmlGenerator:
-    def __init__(self, user: User):
-        self.user = user
+    def __init__(self, user_classes: list):
+        self.user_classes = user_classes
         self.index_html_path = Path(output_dir, 'index.html')
 
     @classmethod
@@ -17,12 +17,12 @@ class StaticHtmlGenerator:
 
     def generate_all_html(self):
         with self.index_html_path.open(mode='w', encoding='utf-8') as f:
-            f.write(generate_index_html(self.user))
-        for c in self.user.user_classes:
+            f.write(generate_index_html(self.user_classes))
+        for c in self.user_classes:
             with self.get_user_class_html_path(c).open(mode='w', encoding='utf-8') as f:
                 f.write(generate_html(c))
 
-def generate_index_html(user: User):
+def generate_index_html(user_classes: dict):
     a = Airium()
     a('<!DOCTYPE html>')
     with a.html(lang="zh-Hans"):
@@ -30,7 +30,7 @@ def generate_index_html(user: User):
             a.meta(charset="utf-8")
             a.title(_t='ibuprofen')
         with a.body():
-            for user_class in user.user_classes:
+            for user_class in user_classes:
                 with a.p():
                     with a.a(href='user_class_' + user_class.guid  + '.html'):
                         a(user_class.name)
@@ -44,7 +44,7 @@ def generate_html(user_class: UserClass):
             a.meta(charset="utf-8")
             a.title(_t=user_class.name)
         with a.body():
-            for record in reversed(user_class.lessons_schedules):
+            for record in reversed(user_class.lesson_schedules):
                 if not 'title' in record:
                     continue
                 with a.p():

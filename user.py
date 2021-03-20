@@ -21,7 +21,7 @@ class UserSession:
         self.uid = uid
         self.soap_url = soap_url
 
-    async def fetch(action, param):
+    async def fetch(self, action, param):
         async with self.session.post(self.soap_url, headers={
             'User-Agent': 'ksoap2-android/2.6.0+',
             'SOAPAction': 'http://webservice.myi.cn/wmstudyservice/wsdl/' + action,
@@ -103,91 +103,51 @@ async def login(session: aiohttp.ClientSession, uid: str, soap_url: str, passwor
     return user
 
 class UserClass:
-    def __init__(self, session, guid, name, uid, soap_url):
-        self.session = session
+    def __init__(self, guid, name):
         self.guid = guid
-        self.uid = uid
-        self.soap_url = soap_url
         self.name = name
+        self.lesson_schedules = self.load_lesson_schedules()
 
     def get_data_path(self):
         return Path(data_dir, 'user_class_'+self.guid+'.txt')
 
-    async def fetch_lessons_schedules(self):
+    def load_lesson_schedules(self):
         p = self.get_data_path()
         if p.exists():
             with p.open(mode='r') as f:
-                self.lessons_schedules = json.load(f)
+                return json.load(f)
         else:
-            self.lessons_schedules = []
-        await self.pull_new_schedule_records()
-        with p.open(mode='w') as f:
+            return []
+
+    def save_lesson_schedules(self):
+        with self.get_data_path().open(mode='w') as f:
             json.dump(self.lessons_schedules, f)
 
-    async def pull_new_schedule_records(self):
-        response = {'hasMoreData': 'true'}
-        szReturnXML = generate_szReturnXML(self.lessons_schedules)
-        tasks = []
-        while response['hasMoreData'] == 'true':
-            response = await self.get_lessons_schedule_table_data(szReturnXML)
-            new_lessons_schedules = response['Record']
-            szReturnXML += generate_szReturnXML(new_lessons_schedules)
-            for schedule in new_lessons_schedules:
-                tasks.append(asyncio.get_running_loop().create_task(self.get_lessons_schedule_details(schedule)))
-            self.lessons_schedules += new_lessons_schedules
-        if tasks:
-            await asyncio.wait(tasks)
-
-    async def get_lessons_schedule_details(self, schedule_record: dict):
-        return_xml = await soap.request_for_text(self.session, self.soap_url, 'GetResourceByGUID', {
-            'lpszResourceGUID': schedule_record['resourceguid']
-        })
-        if return_xml == '1168' or return_xml == '<Error code="1168" />':
-            return
-        root = ET.fromstring(return_xml)
-
-        lesson_attr = root[0].attrib
-        del lesson_attr['guid']
-        schedule_record.update(lesson_attr)
-
-        tmp = []
-        tasks = []
-        for resource_tag in root[0][2]:
-            tasks.append(asyncio.get_running_loop().create_task(self.get_refrence_resource_details(resource_tag.attrib)))
-            tmp.append(resource_tag.attrib)
-        if tasks:
-            await asyncio.wait(tasks)
-        schedule_record['RefrenceResource'] = tmp
-        return schedule_record
-
-    async def get_refrence_resource_details(self, refrence_resource):
-        result = await soap.fetch(self.session, self.soap_url, 'GetResourceByGUID', {
-            'lpszResourceGUID': refrence_resource['guid']
-        })
-        try:
-            root = ET.fromstring(ET.fromstring(result)[1][0][0].text)
-            refrence_resource.update(root[0].find('Content').attrib)
-        except:
-            return
-
-    async def get_lessons_schedule_table_data(self, szReturnXML):
-        root = ET.fromstring(await soap.request_for_text(self.session, self.soap_url, 'LessonsScheduleGetTableData',{
+    async def fetch_lesson_schedules_table(self, us: UserSession, szReturnXML: str):
+        result = html.unescape(await us.fetch('LessonsScheduleGetTableData', {
             'lpszTableName': 'lessonsschedule',
             'lpszUserClassGUID': self.guid,
-            'lpszStudentID': self.uid,
+            'lpszStudentID': us.uid,
             'lpszLastSyncTime': '',
             'szReturnXML': 'enablesegment=3;' + szReturnXML,
         }))
-        result_dict = root.attrib
-        tmp = []
-        for record in root:
-            tmp.append({
-                'guid': record.find('guid').text,
-                'resourceguid': record.find('resourceguid').text,
-                'syn_timestamp': record.find('syn_timestamp').text,
+        root = ET.fromstring(result)
+        response_attr = root[1][0][0][0].attrib
+        for record in root[1][0][0][0]:
+            szReturnXML += record[0].text + '=' + record[9].text + ';'
+            self.lesson_schedules.append({
+                "guid": record[0].text,
+                "resourceguid": record[4].text,
+                "syn_timestamp": record[9].text
             })
-        result_dict['Record'] = tmp
-        return result_dict
+        if (response_attr['hasMoreData'] == 'false'):
+            tasks = []
+            for lesson_schedule in self.lesson_schedules:
+                tasks.append(asyncio.create_task(us.get_lesson_schedule_details(lesson_schedule)))
+            await asyncio.wait(tasks)
+            return
+        else:
+            return self.fetch_lesson_schedules_table(us, szReturnXML)
 
 def generate_szReturnXML(records):
     szReturnXML = ''
@@ -199,19 +159,12 @@ async def main(args):
     async with aiohttp.ClientSession() as session:
         username = args.username.split('@')
         us = UserSession(session, username[0], 'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]))
-        await us.get_lesson_schedule({"guid": "bb820850d0304944ad1113375db8f81e", "resourceguid": "b02d4d3b71d7407abfe34292976c524e", "syn_timestamp": "2019-04-10 20:45:53"})
-        '''#user = await get_user(session, username[0], 'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]))
-        user = await login(
-            session,
-            username[0],
-            'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]),
-            args.password if args.password else '123456',
-        )
+        user_classes = await us.get_user_classes(args.password if args.password else '123456')
         tasks = []
-        for c in user.user_classes:
-            tasks.append(asyncio.create_task(c.fetch_lessons_schedules()))
+        for user_class in user_classes:
+            tasks.append(user_class.fetch_lesson_schedules_table(us, ''))
         await asyncio.wait(tasks)
-        export.StaticHtmlGenerator(user).generate_all_html()'''
+        export.StaticHtmlGenerator(user_classes).generate_all_html()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
