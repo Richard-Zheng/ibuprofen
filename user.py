@@ -48,12 +48,12 @@ class UserSession:
         })
         root = ET.fromstring(html.unescape(result))
         try:
-            root[1][0][0][0][0].attrib.update(lesson_schedule)
-            attr = root[1][0][0][0][0].attrib
+            del root[1][0][0][0][0].attrib['guid']
+            lesson_schedule.update(root[1][0][0][0][0].attrib)
         except:
             return
 
-        file_resources = attr['file_resources'] = []
+        file_resources = []
         for ref in root[1][0][0][0][0][2]:
             result = await soap.fetch(self.session, self.soap_url, 'GetResourceByGUID', {
                 'lpszResourceGUID': ref.attrib['guid']
@@ -63,7 +63,7 @@ class UserSession:
             except:
                 continue
             file_resources.append({'guid': ref.attrib['guid'],'title': ref.attrib['title'],'fileURI': content['fileURI']})
-        return attr
+        lesson_schedule['file_resources'] = file_resources
 
 class User:
     def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str, user_classes: list):
@@ -107,6 +107,7 @@ class UserClass:
         self.guid = guid
         self.name = name
         self.lesson_schedules = self.load_lesson_schedules()
+        self.szReturnXML = generate_szReturnXML(self.lesson_schedules)
 
     def get_data_path(self):
         return Path(data_dir, 'user_class_'+self.guid+'.txt')
@@ -121,33 +122,32 @@ class UserClass:
 
     def save_lesson_schedules(self):
         with self.get_data_path().open(mode='w') as f:
-            json.dump(self.lessons_schedules, f)
+            json.dump(self.lesson_schedules, f)
 
-    async def fetch_lesson_schedules_table(self, us: UserSession, szReturnXML: str):
-        result = html.unescape(await us.fetch('LessonsScheduleGetTableData', {
-            'lpszTableName': 'lessonsschedule',
-            'lpszUserClassGUID': self.guid,
-            'lpszStudentID': us.uid,
-            'lpszLastSyncTime': '',
-            'szReturnXML': 'enablesegment=3;' + szReturnXML,
-        }))
-        root = ET.fromstring(result)
-        response_attr = root[1][0][0][0].attrib
-        for record in root[1][0][0][0]:
-            szReturnXML += record[0].text + '=' + record[9].text + ';'
-            self.lesson_schedules.append({
-                "guid": record[0].text,
-                "resourceguid": record[4].text,
-                "syn_timestamp": record[9].text
-            })
-        if (response_attr['hasMoreData'] == 'false'):
-            tasks = []
-            for lesson_schedule in self.lesson_schedules:
+    async def fetch_lesson_schedules_table(self, us: UserSession):
+        response_attr = {'hasMoreData': 'true'}
+        tasks = []
+        while response_attr['hasMoreData'] == 'true':
+            result = html.unescape(await us.fetch('LessonsScheduleGetTableData', {
+                'lpszTableName': 'lessonsschedule',
+                'lpszUserClassGUID': self.guid,
+                'lpszStudentID': us.uid,
+                'lpszLastSyncTime': '',
+                'szReturnXML': 'enablesegment=3;' + self.szReturnXML,
+            }))
+            root = ET.fromstring(result)
+            response_attr = root[1][0][0][0].attrib
+            for record in root[1][0][0][0]:
+                self.szReturnXML += record[0].text + '=' + record[9].text + ';'
+                lesson_schedule = {
+                    "guid": record[0].text,
+                    "resourceguid": record[4].text,
+                    "syn_timestamp": record[9].text
+                }
+                self.lesson_schedules.append(lesson_schedule)
                 tasks.append(asyncio.create_task(us.get_lesson_schedule_details(lesson_schedule)))
-            await asyncio.wait(tasks)
-            return
-        else:
-            return self.fetch_lesson_schedules_table(us, szReturnXML)
+        await asyncio.wait(tasks)
+        self.save_lesson_schedules()
 
 def generate_szReturnXML(records):
     szReturnXML = ''
@@ -162,7 +162,7 @@ async def main(args):
         user_classes = await us.get_user_classes(args.password if args.password else '123456')
         tasks = []
         for user_class in user_classes:
-            tasks.append(user_class.fetch_lesson_schedules_table(us, ''))
+            tasks.append(user_class.fetch_lesson_schedules_table(us))
         await asyncio.wait(tasks)
         export.StaticHtmlGenerator(user_classes).generate_all_html()
 

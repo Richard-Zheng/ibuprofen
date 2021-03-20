@@ -51,7 +51,9 @@ def generate_html(user_class: UserClass):
                     a(record['title'])
                     with a.i(style="font-size:3px;"):
                         a(record['guid'])
-                for resource in record['RefrenceResource']:
+                if not 'file_resources' in record:
+                    continue
+                for resource in record['file_resources']:
                     if not 'fileURI' in resource:
                         continue
                     with a.a(href=resource['fileURI']):
