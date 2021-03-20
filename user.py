@@ -3,6 +3,7 @@ import aiohttp
 import hashlib
 import json
 import argparse
+import html
 from pathlib import Path
 from airium import Airium
 import xml.etree.ElementTree as ET
@@ -13,6 +14,56 @@ import export
 
 data_dir = Path('data')
 data_dir.mkdir(parents=True, exist_ok=True)
+
+class UserSession:
+    def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str):
+        self.session = session
+        self.uid = uid
+        self.soap_url = soap_url
+
+    async def fetch(action, param):
+        async with self.session.post(self.soap_url, headers={
+            'User-Agent': 'ksoap2-android/2.6.0+',
+            'SOAPAction': 'http://webservice.myi.cn/wmstudyservice/wsdl/' + action,
+            'Content-Type': 'text/xml;charset=utf-8',
+            'Cookie': 'userguid=ffffffffffffffffffffffffffffffff;username=paduser;usergroupguid=ffffffffffffffffffffffffffffffff',
+            'Accept-Encoding': 'gzip'
+        }, data=soap.param_to_request_body(action, param)) as response:
+            return await response.text()
+
+    async def get_user_classes(self, password):
+        login_data = json.loads(ET.fromstring(await soap.fetch(self.session, self.soap_url, 'UsersLoginJson', {
+            'lpszUserName': self.uid,
+            'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
+            'lpszHardwareKey': config.HARDWARE_KEY,
+        }))[1][0][0].text)
+        user_classes = []
+        for user_class_data in login_data['classes']:
+            user_classes.append(UserClass(user_class_data['guid'], user_class_data['name']))
+        return user_classes
+
+    async def get_lesson_schedule_details(self, lesson_schedule: dict):
+        result = await soap.fetch(self.session, self.soap_url, 'GetResourceByGUID', {
+            'lpszResourceGUID': lesson_schedule['resourceguid']
+        })
+        root = ET.fromstring(html.unescape(result))
+        try:
+            root[1][0][0][0][0].attrib.update(lesson_schedule)
+            attr = root[1][0][0][0][0].attrib
+        except:
+            return
+
+        file_resources = attr['file_resources'] = []
+        for ref in root[1][0][0][0][0][2]:
+            result = await soap.fetch(self.session, self.soap_url, 'GetResourceByGUID', {
+                'lpszResourceGUID': ref.attrib['guid']
+            })
+            try:
+                content = ET.fromstring(html.unescape(result))[1][0][0][0][0][2].attrib
+            except:
+                continue
+            file_resources.append({'guid': ref.attrib['guid'],'title': ref.attrib['title'],'fileURI': content['fileURI']})
+        return attr
 
 class User:
     def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str, user_classes: list):
@@ -147,7 +198,9 @@ def generate_szReturnXML(records):
 async def main(args):
     async with aiohttp.ClientSession() as session:
         username = args.username.split('@')
-        #user = await get_user(session, username[0], 'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]))
+        us = UserSession(session, username[0], 'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]))
+        await us.get_lesson_schedule({"guid": "bb820850d0304944ad1113375db8f81e", "resourceguid": "b02d4d3b71d7407abfe34292976c524e", "syn_timestamp": "2019-04-10 20:45:53"})
+        '''#user = await get_user(session, username[0], 'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]))
         user = await login(
             session,
             username[0],
@@ -158,7 +211,7 @@ async def main(args):
         for c in user.user_classes:
             tasks.append(asyncio.create_task(c.fetch_lessons_schedules()))
         await asyncio.wait(tasks)
-        export.StaticHtmlGenerator(user).generate_all_html()
+        export.StaticHtmlGenerator(user).generate_all_html()'''
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
