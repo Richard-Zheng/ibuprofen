@@ -65,43 +65,6 @@ class UserSession:
             file_resources.append({'guid': ref.attrib['guid'],'title': ref.attrib['title'],'fileURI': content['fileURI']})
         lesson_schedule['file_resources'] = file_resources
 
-class User:
-    def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str, user_classes: list):
-        self.session = session
-        self.uid = uid
-        self.soap_url = soap_url
-        self.user_classes = user_classes
-        self.data_path = Path(data_dir, 'user_'+self.uid+'.txt')
-
-async def get_user(session: aiohttp.ClientSession, uid: str, soap_url: str):
-    user = User(session, uid, soap_url, [])
-    guid = await soap.request_for_text(session, soap_url, 'UsersGetUserGUID', {'lpszUserName': uid})
-    info = await soap.request_for_text(session, soap_url, 'UsersGetUserInfoByGUID', {'szUserGUID': guid})
-    if info:
-        i = json.loads(info)
-        for user_class_data in i['classes']:
-            user.user_classes.append(UserClass(session, user_class_data['guid'], user_class_data['name'], uid, soap_url))
-    return user
-
-async def login(session: aiohttp.ClientSession, uid: str, soap_url: str, password: str):
-    user = User(session, uid, soap_url, [])
-    p = user.data_path
-    if p.exists():
-        with p.open(mode='r') as f:
-            user.login_data = json.load(f)
-    else:
-        login_data_text = await soap.request_for_text(session, soap_url, 'UsersLoginJson', {
-            'lpszUserName': uid,
-            'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
-            'lpszHardwareKey': config.HARDWARE_KEY,
-        })
-        with p.open(mode='w') as f:
-            f.write(login_data_text)
-        user.login_data = json.loads(login_data_text)
-    for user_class_data in user.login_data['classes']:
-        user.user_classes.append(UserClass(session, user_class_data['guid'], user_class_data['name'], uid, soap_url))
-    return user
-
 class UserClass:
     def __init__(self, guid, name):
         self.guid = guid
