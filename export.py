@@ -4,6 +4,7 @@ import time
 
 output_dir = Path('opt')
 output_dir.mkdir(parents=True, exist_ok=True)
+pdf_convertable_exts = ["doc", "ppt"]
 
 def generate_index_html(user_classes: dict, user_class_to_href):
     a = Airium()
@@ -41,5 +42,10 @@ def generate_user_class_html(user_class):
                         continue
                     with a.a(href=resource['fileURI']):
                         a(resource['title'])
+                    if any(ext in resource['mainFileExtName'] for ext in pdf_convertable_exts):
+                        a.br()
+                        with a.i():
+                            with a.a(href=resource['fileURI'].replace(resource['mainFileExtName'], 'pdf')):
+                                a('PDF')
                     a.br()
     return str(a)

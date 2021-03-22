@@ -76,10 +76,10 @@ class UserSession:
                 'lpszResourceGUID': ref.attrib['guid']
             })
             try:
-                content = ET.fromstring(html.unescape(result))[1][0][0][0][0][2].attrib
+                resource = ET.fromstring(html.unescape(result))[1][0][0][0][0]
             except:
                 continue
-            file_resources.append({'guid': ref.attrib['guid'],'title': ref.attrib['title'],'fileURI': content['fileURI']})
+            file_resources.append({'guid': ref.attrib['guid'],'title': resource.attrib['title'],'mainFileExtName': resource.attrib['mainFileExtName'],'fileURI': resource[2].attrib['fileURI']})
         lesson_schedule['file_resources'] = file_resources
 
 class UserClass:
