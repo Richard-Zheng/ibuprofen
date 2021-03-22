@@ -20,9 +20,3 @@ jobs:
         pip install -r requirements.txt
     - name: Fetch data and generate
       run: python user.py ${{ secrets.ARGS }}
-    - name: Upload HTML
-      uses: actions/upload-artifact@v2
-      with:
-          name: output
-          path: opt/*.*
-          retention-days: 1
