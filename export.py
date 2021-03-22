@@ -10,7 +10,7 @@ class StaticHtmlGenerator:
         self.index_html_path = Path(output_dir, 'index.html')
 
     @classmethod
-    def get_user_class_html_path(clz, user_class: UserClass):
+    def get_user_class_html_path(clz, user_class):
         return Path(output_dir, 'user_class_'+user_class.guid+'.html')
 
     def generate_all_html(self):
