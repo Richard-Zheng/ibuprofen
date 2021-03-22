@@ -8,12 +8,24 @@ from pathlib import Path
 from airium import Airium
 import xml.etree.ElementTree as ET
 
-import soap
 import config
 import export
 
 data_dir = Path('data')
 data_dir.mkdir(parents=True, exist_ok=True)
+
+def param_to_request_body(action, param):
+    res = '''<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
+    <v:Header/>
+    <v:Body>
+        <''' + action + ''' xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">'''
+    for key in param:
+        res += '''
+            <{0} i:type="d:{1}">{2}</{0}>'''.format(key, 'string', param[key])
+    res += '''
+        </{0}>
+    </v:Body></v:Envelope>'''.format(action)
+    return res
 
 class UserSession:
     def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str):
@@ -28,11 +40,11 @@ class UserSession:
             'Content-Type': 'text/xml;charset=utf-8',
             'Cookie': 'userguid=ffffffffffffffffffffffffffffffff;username=paduser;usergroupguid=ffffffffffffffffffffffffffffffff',
             'Accept-Encoding': 'gzip'
-        }, data=soap.param_to_request_body(action, param)) as response:
+        }, data=param_to_request_body(action, param)) as response:
             return await response.text()
 
     async def get_user_classes(self, password):
-        login_data = json.loads(ET.fromstring(await soap.fetch(self.session, self.soap_url, 'UsersLoginJson', {
+        login_data = json.loads(ET.fromstring(await self.fetch('UsersLoginJson', {
             'lpszUserName': self.uid,
             'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
             'lpszHardwareKey': config.HARDWARE_KEY,
@@ -43,7 +55,7 @@ class UserSession:
         return user_classes
 
     async def get_lesson_schedule_details(self, lesson_schedule: dict):
-        result = await soap.fetch(self.session, self.soap_url, 'GetResourceByGUID', {
+        result = await self.fetch('GetResourceByGUID', {
             'lpszResourceGUID': lesson_schedule['resourceguid']
         })
         root = ET.fromstring(html.unescape(result))
@@ -55,7 +67,7 @@ class UserSession:
 
         file_resources = []
         for ref in root[1][0][0][0][0][2]:
-            result = await soap.fetch(self.session, self.soap_url, 'GetResourceByGUID', {
+            result = await self.fetch('GetResourceByGUID', {
                 'lpszResourceGUID': ref.attrib['guid']
             })
             try:
@@ -125,7 +137,7 @@ async def main(args):
         user_classes = await us.get_user_classes(args.password if args.password else '123456')
         tasks = []
         for user_class in user_classes:
-            tasks.append(user_class.fetch_lesson_schedules_table(us))
+            tasks.append(asyncio.create_task(user_class.fetch_lesson_schedules_table(us)))
         await asyncio.wait(tasks)
         export.StaticHtmlGenerator(user_classes).generate_all_html()
 
