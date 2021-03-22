@@ -1,8 +1,6 @@
 from airium import Airium
 from pathlib import Path
 
-from user import User, UserClass
-
 output_dir = Path('opt')
 output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -36,7 +34,7 @@ def generate_index_html(user_classes: dict):
                         a(user_class.name)
     return str(a)
 
-def generate_html(user_class: UserClass):
+def generate_html(user_class):
     a = Airium()
     a('<!DOCTYPE html>')
     with a.html(lang="zh-Hans"):
