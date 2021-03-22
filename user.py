@@ -28,10 +28,15 @@ def param_to_request_body(action, param):
     return res
 
 class UserSession:
-    def __init__(self, session: aiohttp.ClientSession, uid: str, soap_url: str):
+    def __init__(self, session: aiohttp.ClientSession, uid: str, host: str):
         self.session = session
         self.uid = uid
-        self.soap_url = soap_url
+        self.host = host
+        self.soap_url = 'https://{0}/wmexam/wmstudyservice.WSDL'.format(host)
+
+    async def upload_to_temp_storage(self, filename, data):
+        async with self.session.post('https://{0}/PutTemporaryStorage?filename={1}'.format(self.host, filename), data=data) as response:
+            return await response.text()
 
     async def fetch(self, action, param):
         async with self.session.post(self.soap_url, headers={
@@ -133,13 +138,18 @@ def generate_szReturnXML(records):
 async def main(args):
     async with aiohttp.ClientSession() as session:
         username = args.username.split('@')
-        us = UserSession(session, username[0], 'https://{0}/wmexam/wmstudyservice.WSDL'.format(username[1]))
+        us = UserSession(session, username[0], username[1])
         user_classes = await us.get_user_classes(args.password if args.password else '123456')
         tasks = []
         for user_class in user_classes:
             tasks.append(asyncio.create_task(user_class.fetch_lesson_schedules_table(us)))
         await asyncio.wait(tasks)
-        export.StaticHtmlGenerator(user_classes).generate_all_html()
+        #export.StaticHtmlGenerator(user_classes).generate_all_html()
+        tasks = []
+        tasks.append(asyncio.create_task(us.upload_to_temp_storage('~TMP_{0}.html'.format(us.uid), export.generate_index_html(user_classes, lambda x: 'https://{0}/GetTemporaryStorage?filename={1}'.format(us.host, '~TMP_user_class_'+x.guid+'.html')))))
+        for user_class in user_classes:
+            tasks.append(asyncio.create_task(us.upload_to_temp_storage('~TMP_user_class_'+user_class.guid+'.html', export.generate_user_class_html(user_class))))
+        await asyncio.wait(tasks)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
