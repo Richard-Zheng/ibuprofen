@@ -77,9 +77,9 @@ class UserSession:
             })
             try:
                 resource = ET.fromstring(html.unescape(result))[1][0][0][0][0]
+                file_resources.append({'guid': ref.attrib['guid'],'title': resource.attrib['title'],'ext': resource.attrib['mainFileExtName'],'fileURI': resource[2].attrib['fileURI']})
             except:
                 continue
-            file_resources.append({'guid': ref.attrib['guid'],'title': resource.attrib['title'],'mainFileExtName': resource.attrib['mainFileExtName'],'fileURI': resource[2].attrib['fileURI']})
         lesson_schedule['file_resources'] = file_resources
 
 class UserClass:
