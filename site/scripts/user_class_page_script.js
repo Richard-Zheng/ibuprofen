@@ -44,20 +44,37 @@ function getAnswerSheet(element) {
     var resourceElement = element.parentElement;
     var resourceGuid = resourceElement.dataset.guid;
     var xhr = getSoapRequest(soapUrl, "GetPrivateData2", {"lpszKey": `AnswerSheet_${resourceGuid}`}, () => {
-        data = JSON.parse(xhr.responseXML.getElementsByTagName("AS:szData")[0].innerHTML);
+        var data = JSON.parse(xhr.responseXML.getElementsByTagName("AS:szData")[0].innerHTML);
         var appendHtml = "<ul>"
         data.category.forEach((category) => {
             appendHtml += `<li>${category.name}<ul>`
             category.questions.forEach((question) => {
-                appendHtml += `<li>${question.index}<input type="text" id="${question.guid}">(${question.score})</li>`;
+                appendHtml += `<li>${question.index}<input type="text" class="question-input" data-guid="${question.guid}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`;
             })
             appendHtml += "</ul></li>";
         });
-        appendHtml += "</ul>"
+        appendHtml += "</ul><button onclick=\"checkAnswer(this)\">Correct locally</button>"
         let newDiv = document.createElement("div");
         newDiv.innerHTML = appendHtml;
         resourceElement.appendChild(newDiv);
     });
+}
+
+function checkAnswer(element) {
+    questionElements = element.parentElement.getElementsByClassName("question-input")
+    for (let questionElement of questionElements) {
+        if (questionElement.value === "") {
+            continue;
+        }
+        if (questionElement.value === questionElement.dataset.correctanswer) {
+            var newNode = document.createElement("span");
+            newNode.innerHTML = `<font color="green">${questionElement.value}</font>`;
+        } else {
+            var newNode = document.createElement("span");
+            newNode.innerHTML = `<font color="red">${questionElement.value}</font> ${questionElement.dataset.correctanswer}`;
+        }
+        questionElement.parentElement.insertBefore(newNode, questionElement);
+    }
 }
 
 function changeAll(b) {
