@@ -36,7 +36,27 @@ function login() {
     userId = document.getElementById("user-id").value;
     let xhr = getSoapRequest(soapUrl, "UsersGetUserGUID", {"lpszUserName": userId}, () => {
         userGuid = xhr.responseXML.getElementsByTagName("AS:szUserGUID")[0].innerHTML;
-        alert("登录成功 " + userGuid);
+        alert("Login successful " + userGuid);
+    });
+}
+
+function getAnswerSheet(element) {
+    var resourceElement = element.parentElement;
+    var resourceGuid = resourceElement.dataset.guid;
+    var xhr = getSoapRequest(soapUrl, "GetPrivateData2", {"lpszKey": `AnswerSheet_${resourceGuid}`}, () => {
+        data = JSON.parse(xhr.responseXML.getElementsByTagName("AS:szData")[0].innerHTML);
+        var appendHtml = "<ul>"
+        data.category.forEach((category) => {
+            appendHtml += `<li>${category.name}<ul>`
+            category.questions.forEach((question) => {
+                appendHtml += `<li>${question.index}<input type="text" id="${question.guid}">(${question.score})</li>`;
+            })
+            appendHtml += "</ul></li>";
+        });
+        appendHtml += "</ul>"
+        let newDiv = document.createElement("div");
+        newDiv.innerHTML = appendHtml;
+        resourceElement.appendChild(newDiv);
     });
 }
 
