@@ -3,6 +3,20 @@ import time
 from airium import Airium
 
 pdf_convertable_exts = ["doc", "docx", "ppt", "pptx"]
+index_to_subject_name = {
+    "0": "语文",
+    "1": "数学",
+    "2": "英语",
+    "3": "物理",
+    "4": "化学",
+    "5": "历史",
+    "6": "地理",
+    "7": "政治",
+    "8": "生物",
+    "100": "课外资源",
+    "101": "课堂实录",
+    "102": "重要通知",
+}
 
 
 def generate_index_html(user_classes: list, user_class_to_href):
@@ -28,6 +42,11 @@ def generate_user_class_html(user_class):
             a.meta(charset="utf-8")
             a.title(_t=user_class.name)
         with a.body():
+            for key in index_to_subject_name:
+                with a.label():
+                    a.input(checked='checked', name='category', onchange='onSubjectCheckboxChange()', type='checkbox',
+                            value=key)
+                    a(index_to_subject_name[key])
             with a.ul():
                 for record in reversed(user_class.lesson_schedules):
                     if not 'title' in record:
@@ -49,4 +68,21 @@ def generate_user_class_html(user_class):
                                         with a.i():
                                             with a.a(href=resource['fileURI'].replace(resource['ext'], 'pdf')):
                                                 a('PDF')
+            with a.script():
+                a('''function onSubjectCheckboxChange() {
+    var items = document.getElementsByName("category");
+    var state = [];
+    for (let i of items) {
+      state[i.value] = i.checked;
+    }
+    
+    var lsitems = document.getElementsByClassName("lesson-schedule")
+    for (let i of lsitems) {
+      if (state[i.dataset.subject]) {
+          i.style.display = ''
+      } else {
+          i.style.display = 'none'
+      }
+    }
+}''')
     return str(a)
