@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 
 from airium import Airium
 
@@ -17,6 +18,8 @@ index_to_subject_name = {
     "101": "课堂实录",
     "102": "重要通知",
 }
+with Path('site/scripts/user_class_page_script.js').open(mode='r') as f:
+    user_class_page_script = f.read()
 
 
 def generate_index_html(user_classes: list, user_class_to_href):
@@ -47,6 +50,9 @@ def generate_user_class_html(user_class):
                     a.input(checked='checked', name='category', onchange='onSubjectCheckboxChange()', type='checkbox',
                             value=key)
                     a(index_to_subject_name[key])
+            with a.p():
+                a.button(onclick='changeAll(true)', type='button', _t='全选')
+                a.button(onclick='changeAll(false)', type='button', _t='全不选')
             with a.ul():
                 for record in reversed(user_class.lesson_schedules):
                     if not 'title' in record:
@@ -69,20 +75,5 @@ def generate_user_class_html(user_class):
                                             with a.a(href=resource['fileURI'].replace(resource['ext'], 'pdf')):
                                                 a('PDF')
             with a.script():
-                a('''function onSubjectCheckboxChange() {
-    var items = document.getElementsByName("category");
-    var state = [];
-    for (let i of items) {
-      state[i.value] = i.checked;
-    }
-    
-    var lsitems = document.getElementsByClassName("lesson-schedule")
-    for (let i of lsitems) {
-      if (state[i.dataset.subject]) {
-          i.style.display = ''
-      } else {
-          i.style.display = 'none'
-      }
-    }
-}''')
+                a(user_class_page_script)
     return str(a)

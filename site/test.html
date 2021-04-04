@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <title>Test Class</title>
@@ -33,41 +33,10 @@
   <input type="checkbox" name="category" value="8" onchange="onSubjectCheckboxChange()" checked="checked"/>
 生物</label>
 
-<p><input id="btnOperate" type="button" value="选择" onclick="static_num()" /></p>
+<p><button type="button" onclick="changeAll(true)">全选</button><button type="button" onclick="changeAll(false)">全不选</button></p>
 
 <div id="lesson-schedules">
 </div>
 </body>
-<script>
-  function onSubjectCheckboxChange() {
-      const table = {
-          "0": "语文",
-          "1": "数学",
-          "2": "英语",
-          "3": "物理",
-          "4": "化学",
-          "5": "历史",
-          "6": "地理",
-          "7": "政治",
-          "8": "生物",
-          "100": "课外资源",
-          "101": "课堂实录",
-          "102": "重要通知"
-      };
-      var items = document.getElementsByName("category");
-      var state = [];
-      for (let i of items) {
-          state[i.value] = i.checked;
-      }
-
-      var lsitems = document.getElementsByClassName("lesson-schedule")
-      for (let i of lsitems) {
-          if (state[i.dataset.subject]) {
-              i.style.display = ''
-          } else {
-              i.style.display = 'none'
-          }
-      }
-  }
-</script>
+<script src="scripts/user_class_page_script.js"></script>
 </html>
