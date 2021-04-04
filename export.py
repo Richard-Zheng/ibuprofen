@@ -1,10 +1,11 @@
-from airium import Airium
-from pathlib import Path
 import time
+
+from airium import Airium
 
 pdf_convertable_exts = ["doc", "docx", "ppt", "pptx"]
 
-def generate_index_html(user_classes: dict, user_class_to_href):
+
+def generate_index_html(user_classes: list, user_class_to_href):
     a = Airium()
     a('<!DOCTYPE html>')
     with a.html(lang="zh-Hans"):
@@ -17,6 +18,7 @@ def generate_index_html(user_classes: dict, user_class_to_href):
                     with a.a(href=user_class_to_href(user_class)):
                         a(user_class.name)
     return str(a)
+
 
 def generate_user_class_html(user_class):
     a = Airium()

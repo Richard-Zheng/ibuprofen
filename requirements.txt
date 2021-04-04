@@ -1,2 +1,2 @@
-aiohttp==3.7.3
-airium==0.2.2
+aiohttp
+airium

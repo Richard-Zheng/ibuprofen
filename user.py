@@ -1,18 +1,19 @@
-import asyncio
-import aiohttp
-import hashlib
-import json
 import argparse
+import asyncio
+import hashlib
 import html
-from pathlib import Path
-from airium import Airium
+import json
 import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import aiohttp
 
 import config
 import export
 
 data_dir = Path('data')
 data_dir.mkdir(parents=True, exist_ok=True)
+
 
 def param_to_request_body(action, param):
     res = '''<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
@@ -27,6 +28,7 @@ def param_to_request_body(action, param):
     </v:Body></v:Envelope>'''.format(action)
     return res
 
+
 class UserSession:
     def __init__(self, session: aiohttp.ClientSession, uid: str, host: str):
         self.session = session
@@ -35,7 +37,8 @@ class UserSession:
         self.soap_url = 'https://{0}/wmexam/wmstudyservice.WSDL'.format(host)
 
     async def upload_to_temp_storage(self, filename, data):
-        async with self.session.post('https://{0}/PutTemporaryStorage?filename={1}'.format(self.host, filename), data=data) as response:
+        async with self.session.post('https://{0}/PutTemporaryStorage?filename={1}'.format(self.host, filename),
+                                     data=data) as response:
             return await response.text()
 
     async def fetch(self, action, param):
@@ -77,10 +80,13 @@ class UserSession:
             })
             try:
                 resource = ET.fromstring(html.unescape(result))[1][0][0][0][0]
-                file_resources.append({'guid': ref.attrib['guid'],'title': resource.attrib['title'],'ext': resource.attrib['mainFileExtName'],'fileURI': resource[2].attrib['fileURI']})
+                file_resources.append({'guid': ref.attrib['guid'], 'title': resource.attrib['title'],
+                                       'ext': resource.attrib['mainFileExtName'],
+                                       'fileURI': resource[2].attrib['fileURI']})
             except:
                 continue
         lesson_schedule['file_resources'] = file_resources
+
 
 class UserClass:
     def __init__(self, guid, name):
@@ -90,7 +96,7 @@ class UserClass:
         self.szReturnXML = generate_szReturnXML(self.lesson_schedules)
 
     def get_data_path(self):
-        return Path(data_dir, 'user_class_'+self.guid+'.txt')
+        return Path(data_dir, 'user_class_' + self.guid + '.txt')
 
     def load_lesson_schedules(self):
         p = self.get_data_path()
@@ -129,11 +135,13 @@ class UserClass:
         await asyncio.wait(tasks)
         self.save_lesson_schedules()
 
+
 def generate_szReturnXML(records):
     szReturnXML = ''
     for record in records:
         szReturnXML += record['guid'] + '=' + record['syn_timestamp'] + ';'
     return szReturnXML
+
 
 async def main(args):
     async with aiohttp.ClientSession() as session:
@@ -144,12 +152,15 @@ async def main(args):
         for user_class in user_classes:
             tasks.append(asyncio.create_task(user_class.fetch_lesson_schedules_table(us)))
         await asyncio.wait(tasks)
-        #export.StaticHtmlGenerator(user_classes).generate_all_html()
-        tasks = []
-        tasks.append(asyncio.create_task(us.upload_to_temp_storage('~TMP_{0}.html'.format(us.uid), export.generate_index_html(user_classes, lambda x: 'https://{0}/GetTemporaryStorage?filename={1}'.format(us.host, '~TMP_user_class_'+x.guid+'.html')))))
+        tasks = [asyncio.create_task(us.upload_to_temp_storage('~TMP_{0}.html'.format(us.uid),
+                                                               export.generate_index_html(
+                                                                   user_classes,
+                                                                   lambda x: 'https://{0}/GetTemporaryStorage?filename={1}'.format(us.host, '~TMP_user_class_' + x.guid + '.html'))))]
         for user_class in user_classes:
-            tasks.append(asyncio.create_task(us.upload_to_temp_storage('~TMP_user_class_'+user_class.guid+'.html', export.generate_user_class_html(user_class))))
+            tasks.append(asyncio.create_task(us.upload_to_temp_storage('~TMP_user_class_' + user_class.guid + '.html',
+                                                                       export.generate_user_class_html(user_class))))
         await asyncio.wait(tasks)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
