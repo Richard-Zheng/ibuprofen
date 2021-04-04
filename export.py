@@ -46,14 +46,13 @@ def generate_user_class_html(user_class):
             a.title(_t=user_class.name)
         with a.body():
             with a.div(id='subject-filter'):
+                a.input(checked='checked', onchange='changeSubjectFilterAll(this.checked)', type='checkbox')
+                a("全选")
                 for key in index_to_subject_name:
                     with a.label():
                         a.input(checked='checked', name='category', onchange='onSubjectCheckboxChange()', type='checkbox',
                                 value=key)
                         a(index_to_subject_name[key])
-                with a.p():
-                    a.button(onclick='changeAll(true)', type='button', _t='全选')
-                    a.button(onclick='changeAll(false)', type='button', _t='全不选')
             with a.div(id='user-login'):
                 a.label(for_='user-id', _t='用户名:')
                 a.input(id='user-id', type='text')
@@ -79,6 +78,8 @@ def generate_user_class_html(user_class):
                                         with a.i():
                                             with a.a(href=resource['fileURI'].replace(resource['ext'], 'pdf')):
                                                 a('PDF')
+                                    a.br()
+                                    a.button(onclick='getAnswerSheet(this)', _t='答题卡')
             with a.script():
                 a(user_class_page_script)
     return str(a)

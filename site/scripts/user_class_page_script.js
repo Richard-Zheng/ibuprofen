@@ -77,10 +77,10 @@ function checkAnswer(element) {
     }
 }
 
-function changeAll(b) {
+function changeSubjectFilterAll(bool) {
     var items = document.getElementsByName("category");
     for (let i of items) {
-        i.checked = b
+        i.checked = bool
     }
     onSubjectCheckboxChange();
 }
