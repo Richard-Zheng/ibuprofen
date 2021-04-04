@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Class</title>
+</head>
+<body>
+<label>
+  <input type="checkbox" name="category" value="0" onchange="onSubjectCheckboxChange()" checked="checked"/>
+语文</label>
+<label>
+  <input type="checkbox" name="category" value="1" onchange="onSubjectCheckboxChange()" checked="checked"/>
+数学</label>
+<label>
+  <input type="checkbox" name="category" value="2" onchange="onSubjectCheckboxChange()" checked="checked"/>
+英语</label>
+<label>
+  <input type="checkbox" name="category" value="3" onchange="onSubjectCheckboxChange()" checked="checked"/>
+物理</label>
+<label>
+  <input type="checkbox" name="category" value="4" onchange="onSubjectCheckboxChange()" checked="checked"/>
+化学</label>
+<label>
+  <input type="checkbox" name="category" value="5" onchange="onSubjectCheckboxChange()" checked="checked"/>
+历史</label>
+<label>
+  <input type="checkbox" name="category" value="6" onchange="onSubjectCheckboxChange()" checked="checked"/>
+地理</label>
+<label>
+  <input type="checkbox" name="category" value="7" onchange="onSubjectCheckboxChange()" checked="checked"/>
+政治</label>
+<label>
+  <input type="checkbox" name="category" value="8" onchange="onSubjectCheckboxChange()" checked="checked"/>
+生物</label>
+
+<p><input id="btnOperate" type="button" value="选择" onclick="static_num()" /></p>
+
+<div id="lesson-schedules">
+</div>
+</body>
+<script>
+  function onSubjectCheckboxChange() {
+      const table = {
+          "0": "语文",
+          "1": "数学",
+          "2": "英语",
+          "3": "物理",
+          "4": "化学",
+          "5": "历史",
+          "6": "地理",
+          "7": "政治",
+          "8": "生物",
+          "100": "课外资源",
+          "101": "课堂实录",
+          "102": "重要通知"
+      };
+      var items = document.getElementsByName("category");
+      var state = [];
+      for (let i of items) {
+          state[i.value] = i.checked;
+      }
+
+      var lsitems = document.getElementsByClassName("lesson-schedule")
+      for (let i of lsitems) {
+          if (state[i.dataset.subject]) {
+              i.style.display = ''
+          } else {
+              i.style.display = 'none'
+          }
+      }
+  }
+</script>
+</html>

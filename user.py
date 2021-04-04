@@ -132,7 +132,7 @@ class UserClass:
                 }
                 self.lesson_schedules.append(lesson_schedule)
                 tasks.append(asyncio.create_task(us.get_lesson_schedule_details(lesson_schedule)))
-        await asyncio.wait(tasks)
+        await asyncio.wait(tasks) if tasks else None
         self.save_lesson_schedules()
 
 

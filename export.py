@@ -28,24 +28,25 @@ def generate_user_class_html(user_class):
             a.meta(charset="utf-8")
             a.title(_t=user_class.name)
         with a.body():
-            for record in reversed(user_class.lesson_schedules):
-                if not 'title' in record:
-                    continue
-                with a.p():
-                    a(record['title'])
-                    with a.i(style="font-size:3px;"):
-                        a(record['guid'])
-                if not 'file_resources' in record:
-                    continue
-                for resource in record['file_resources']:
-                    if not 'fileURI' in resource:
+            with a.ul():
+                for record in reversed(user_class.lesson_schedules):
+                    if not 'title' in record:
                         continue
-                    with a.a(href=resource['fileURI']):
-                        a(resource['title'])
-                    if resource['ext'] in pdf_convertable_exts:
-                        a.br()
-                        with a.i():
-                            with a.a(href=resource['fileURI'].replace(resource['ext'], 'pdf')):
-                                a('PDF')
-                    a.br()
+
+                    with a.li(klass='lesson-schedule', **{'data-subject': record['numberSubject']}):
+                        a.p(klass='lesson-schedule-title', _t=record['title'])
+                        if not 'file_resources' in record:
+                            continue
+                        with a.ul():
+                            for resource in record['file_resources']:
+                                if not 'fileURI' in resource:
+                                    continue
+                                with a.li():
+                                    with a.a(href=resource['fileURI']):
+                                        a(resource['title'])
+                                    if resource['ext'] in pdf_convertable_exts:
+                                        a.br()
+                                        with a.i():
+                                            with a.a(href=resource['fileURI'].replace(resource['ext'], 'pdf')):
+                                                a('PDF')
     return str(a)
