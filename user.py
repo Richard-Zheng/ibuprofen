@@ -66,8 +66,8 @@ class UserSession:
         result = await self.fetch('GetResourceByGUID', {
             'lpszResourceGUID': lesson_schedule['resourceguid']
         })
-        root = ET.fromstring(html.unescape(result))
         try:
+            root = ET.fromstring(html.unescape(result))
             del root[1][0][0][0][0].attrib['guid']
             lesson_schedule.update(root[1][0][0][0][0].attrib)
         except:
@@ -92,22 +92,21 @@ class UserClass:
     def __init__(self, guid, name):
         self.guid = guid
         self.name = name
+        self.data_path = Path(data_dir, 'user_class_' + self.guid + '.txt')
         self.lesson_schedules = self.load_lesson_schedules()
-        self.szReturnXML = generate_szReturnXML(self.lesson_schedules)
-
-    def get_data_path(self):
-        return Path(data_dir, 'user_class_' + self.guid + '.txt')
+        self.szReturnXML = ''
+        for lesson_schedule in self.lesson_schedules:
+            self.szReturnXML += lesson_schedule['guid'] + '=' + lesson_schedule['syn_timestamp'] + ';'
 
     def load_lesson_schedules(self):
-        p = self.get_data_path()
-        if p.exists():
-            with p.open(mode='r') as f:
+        if self.data_path.exists():
+            with self.data_path.open(mode='r') as f:
                 return json.load(f)
         else:
             return []
 
     def save_lesson_schedules(self):
-        with self.get_data_path().open(mode='w') as f:
+        with self.data_path.open(mode='w') as f:
             json.dump(self.lesson_schedules, f)
 
     async def fetch_lesson_schedules_table(self, us: UserSession):
@@ -134,13 +133,6 @@ class UserClass:
                 tasks.append(asyncio.create_task(us.get_lesson_schedule_details(lesson_schedule)))
         await asyncio.wait(tasks) if tasks else None
         self.save_lesson_schedules()
-
-
-def generate_szReturnXML(records):
-    szReturnXML = ''
-    for record in records:
-        szReturnXML += record['guid'] + '=' + record['syn_timestamp'] + ';'
-    return szReturnXML
 
 
 async def main(args):
