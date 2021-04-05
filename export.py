@@ -46,8 +46,9 @@ def generate_user_class_html(user_class):
             a.title(_t=user_class.name)
         with a.body():
             with a.div(id='subject-filter'):
-                a.input(checked='checked', onchange='changeSubjectFilterAll(this.checked)', type='checkbox')
-                a("全选")
+                with a.label():
+                    a.input(checked='checked', onchange='changeSubjectFilterAll(this.checked)', type='checkbox')
+                    a("全选")
                 for key in index_to_subject_name:
                     with a.label():
                         a.input(checked='checked', name='category', onchange='onSubjectCheckboxChange()', type='checkbox',

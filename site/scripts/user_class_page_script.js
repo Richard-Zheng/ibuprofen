@@ -87,17 +87,21 @@ function changeSubjectFilterAll(bool) {
 
 function onSubjectCheckboxChange() {
     var items = document.getElementsByName("category");
-    var state = [];
+    var selector = "";
     for (let i of items) {
-        state[i.value] = i.checked;
-    }
-
-    var lsitems = document.getElementsByClassName("lesson-schedule")
-    for (let i of lsitems) {
-        if (state[i.dataset.subject]) {
-            i.style.display = ''
-        } else {
-            i.style.display = 'none'
+        if (!i.checked) {
+            selector += `.lesson-schedule[data-subject='${i.value}'],`;
         }
     }
+    selector = selector.slice(0,-1);
+    var newStyle = `${selector} {display: none;}`;
+
+    var styleElement = document.getElementById('styles_filter');
+    if (!styleElement) {
+        var styleElement = document.createElement('style');
+        styleElement.type = 'text/css';
+        styleElement.id = 'styles_filter';
+        document.getElementsByTagName('head')[0].appendChild(styleElement);
+    }
+    styleElement.innerHTML = newStyle;
 }
