@@ -35,6 +35,7 @@ class UserSession:
         self.uid = uid
         self.host = host
         self.soap_url = 'https://{0}/wmexam/wmstudyservice.WSDL'.format(host)
+        self.data_path = Path(data_dir, 'user_' + self.uid + '.txt')
 
     async def upload_to_temp_storage(self, filename, data):
         async with self.session.post('https://{0}/PutTemporaryStorage?filename={1}'.format(self.host, filename),
@@ -52,11 +53,17 @@ class UserSession:
             return await response.text()
 
     async def get_user_classes(self, password):
-        login_data = json.loads(ET.fromstring(await self.fetch('UsersLoginJson', {
-            'lpszUserName': self.uid,
-            'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
-            'lpszHardwareKey': config.HARDWARE_KEY,
-        }))[1][0][0].text)
+        if self.data_path.exists():
+            with self.data_path.open(mode='r') as f:
+                login_data = json.load(f)
+        else:
+            login_data = json.loads(ET.fromstring(await self.fetch('UsersLoginJson', {
+                'lpszUserName': self.uid,
+                'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
+                'lpszHardwareKey': config.HARDWARE_KEY,
+            }))[1][0][0].text)
+            with self.data_path.open(mode='w') as f:
+                json.dump(login_data, f)
         user_classes = []
         for user_class_data in login_data['classes']:
             user_classes.append(UserClass(user_class_data['guid'], user_class_data['name']))
@@ -67,19 +74,19 @@ class UserSession:
             'lpszResourceGUID': lesson_schedule['resourceguid']
         })
         try:
-            root = ET.fromstring(html.unescape(result))
-            del root[1][0][0][0][0].attrib['guid']
-            lesson_schedule.update(root[1][0][0][0][0].attrib)
+            root = ET.fromstring(html.unescape(result))[1][0][0][0][0]
+            del root.attrib['guid']
+            lesson_schedule.update(root.attrib)
         except:
             return
 
         file_resources = []
-        for ref in root[1][0][0][0][0][2]:
+        for ref in root[2]:
             result = await self.fetch('GetResourceByGUID', {
                 'lpszResourceGUID': ref.attrib['guid']
             })
             try:
-                resource = ET.fromstring(html.unescape(result))[1][0][0][0][0]
+                resource = ET.fromstring(html.unescape(result))
                 file_resources.append({'guid': ref.attrib['guid'], 'title': resource.attrib['title'],
                                        'ext': resource.attrib['mainFileExtName'],
                                        'fileURI': resource[2].attrib['fileURI']})
