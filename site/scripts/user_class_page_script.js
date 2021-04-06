@@ -1,4 +1,4 @@
-var userGuid = "ffffffffffffffffffffffffffffffff";
+let userGuid = "ffffffffffffffffffffffffffffffff";
 const soapUrl = `${window.location.protocol}//${window.location.host}/wmexam/wmstudyservice.WSDL`;
 
 function getSoapRequestBody(action, params) {
@@ -33,7 +33,7 @@ function getSoapRequest(soapUrl, action, params, onload) {
 
 function login() {
     console.log(soapUrl)
-    userId = document.getElementById("user-id").value;
+    let userId = document.getElementById("user-id").value;
     let xhr = getSoapRequest(soapUrl, "UsersGetUserGUID", {"lpszUserName": userId}, () => {
         userGuid = xhr.responseXML.getElementsByTagName("AS:szUserGUID")[0].innerHTML;
         alert("Login successful " + userGuid);
@@ -41,11 +41,11 @@ function login() {
 }
 
 function getAnswerSheet(element) {
-    var resourceElement = element.parentElement;
-    var resourceGuid = resourceElement.dataset.guid;
-    var xhr = getSoapRequest(soapUrl, "GetPrivateData2", {"lpszKey": `AnswerSheet_${resourceGuid}`}, () => {
-        var data = JSON.parse(xhr.responseXML.getElementsByTagName("AS:szData")[0].innerHTML);
-        var appendHtml = "<ul>"
+    const resourceElement = element.parentElement;
+    const resourceGuid = resourceElement.dataset.guid;
+    const xhr = getSoapRequest(soapUrl, "GetPrivateData2", {"lpszKey": `AnswerSheet_${resourceGuid}`}, () => {
+        const data = JSON.parse(xhr.responseXML.getElementsByTagName("AS:szData")[0].innerHTML);
+        let appendHtml = "<ul>";
         data.category.forEach((category) => {
             appendHtml += `<li>${category.name}<ul>`
             category.questions.forEach((question) => {
@@ -61,24 +61,25 @@ function getAnswerSheet(element) {
 }
 
 function checkAnswer(element) {
-    questionElements = element.parentElement.getElementsByClassName("question-input")
+    let newNode;
+    let questionElements = element.parentElement.getElementsByClassName("question-input")
     for (let questionElement of questionElements) {
         if (questionElement.value === "") {
             continue;
         }
         if (questionElement.value === questionElement.dataset.correctanswer) {
-            var newNode = document.createElement("span");
-            newNode.innerHTML = `<font color="green">${questionElement.value}</font>`;
+            newNode = document.createElement("span");
+            newNode.innerHTML = `<span style="color: green">${questionElement.value}</span>`;
         } else {
-            var newNode = document.createElement("span");
-            newNode.innerHTML = `<font color="red">${questionElement.value}</font> ${questionElement.dataset.correctanswer}`;
+            newNode = document.createElement("span");
+            newNode.innerHTML = `<span style="color: red">${questionElement.value}</span> ${questionElement.dataset.correctanswer}`;
         }
         questionElement.parentElement.insertBefore(newNode, questionElement);
     }
 }
 
 function changeSubjectFilterAll(bool) {
-    var items = document.getElementsByName("category");
+    const items = document.getElementsByName("category");
     for (let i of items) {
         i.checked = bool
     }
@@ -86,22 +87,21 @@ function changeSubjectFilterAll(bool) {
 }
 
 function onSubjectCheckboxChange() {
-    var items = document.getElementsByName("category");
-    var selector = "";
+    const items = document.getElementsByName("category");
+    let selector = "";
     for (let i of items) {
         if (!i.checked) {
             selector += `.lesson-schedule[data-subject='${i.value}'],`;
         }
     }
     selector = selector.slice(0,-1);
-    var newStyle = `${selector} {display: none;}`;
 
-    var styleElement = document.getElementById('styles_filter');
+    let styleElement = document.getElementById('styles_filter');
     if (!styleElement) {
-        var styleElement = document.createElement('style');
+        styleElement = document.createElement('style');
         styleElement.type = 'text/css';
         styleElement.id = 'styles_filter';
         document.getElementsByTagName('head')[0].appendChild(styleElement);
     }
-    styleElement.innerHTML = newStyle;
+    styleElement.innerHTML = `${selector} {display: none;}`;
 }

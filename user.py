@@ -74,19 +74,19 @@ class UserSession:
             'lpszResourceGUID': lesson_schedule['resourceguid']
         })
         try:
-            root = ET.fromstring(html.unescape(result))[1][0][0][0][0]
-            del root.attrib['guid']
-            lesson_schedule.update(root.attrib)
+            lesson_prepare_element = ET.fromstring(html.unescape(result))[1][0][0][0][0]
+            del lesson_prepare_element.attrib['guid']
+            lesson_schedule.update(lesson_prepare_element.attrib)
         except:
             return
 
         file_resources = []
-        for ref in root[2]:
+        for ref in lesson_prepare_element[2]:
             result = await self.fetch('GetResourceByGUID', {
                 'lpszResourceGUID': ref.attrib['guid']
             })
             try:
-                resource = ET.fromstring(html.unescape(result))
+                resource = ET.fromstring(html.unescape(result))[1][0][0][0][0]
                 file_resources.append({'guid': ref.attrib['guid'], 'title': resource.attrib['title'],
                                        'ext': resource.attrib['mainFileExtName'],
                                        'fileURI': resource[2].attrib['fileURI']})
