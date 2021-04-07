@@ -1,4 +1,6 @@
 const hostUrl = `${window.location.protocol}//${window.location.host}`;
+let userID = ""
+let userGUID = ""
 
 function getSoapRequestBody(action, params) {
     var res = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
@@ -15,17 +17,6 @@ function getSoapRequestBody(action, params) {
     return res;
 }
 
-function getSoapRequest(action, params, onload) {
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", hostUrl + "/wmexam/wmstudyservice.WSDL");
-    xhr.setRequestHeader('SOAPAction', `http://webservice.myi.cn/wmstudyservice/wsdl/${action}`);
-    xhr.setRequestHeader('Content-Type', 'text/xml;charset=utf-8');
-    xhr.responseType = "document";
-    xhr.addEventListener("load", onload);
-    xhr.send(getSoapRequestBody(action, params));
-    return xhr;
-}
-
 function getSubmitAnswerRequest(questionGuid, answer, onload) {
     let xhr = new XMLHttpRequest();
     xhr.open("POST", hostUrl + "/restfuldatasource/answersheetstudentanswer/" + questionGuid);
@@ -35,34 +26,45 @@ function getSubmitAnswerRequest(questionGuid, answer, onload) {
     return xhr
 }
 
-function login() {
-    let userId = document.getElementById("user-id").value;
-    let xhr = getSoapRequest("UsersGetUserGUID", {"lpszUserName": userId}, () => {
-        let userGuid = xhr.responseXML.getElementsByTagName("AS:szUserGUID")[0].innerHTML;
-        alert("Login successful " + userGuid);
-        document.cookie = `szUserName=${userId};`;
-        document.cookie = `szUserGUID=${userGuid};`;
-    });
+async function soapRequest(action, params) {
+    let response = await fetch(hostUrl + "/wmexam/wmstudyservice.WSDL", {
+        method: 'POST',
+        headers: {
+            "SOAPAction": `http://webservice.myi.cn/wmstudyservice/wsdl/${action}`,
+            "Content-type": "text/xml;charset=utf-8",
+        },
+        body: getSoapRequestBody(action, params),
+    })
+    return new window.DOMParser().parseFromString(await response.text(), "text/xml")
 }
 
-function getAnswerSheet(element) {
-    const resourceElement = element.parentElement;
-    const resourceGuid = resourceElement.dataset.guid;
-    const xhr = getSoapRequest("GetPrivateData2", {"lpszKey": `AnswerSheet_${resourceGuid}`}, () => {
-        const data = JSON.parse(xhr.responseXML.getElementsByTagName("AS:szData")[0].innerHTML);
-        let appendHtml = "<ul>";
-        data.category.forEach((category) => {
-            appendHtml += `<li>${category.name}<ul>`
-            category.questions.forEach((question) => {
-                appendHtml += `<li>${question.index}<input type="text" class="question-input" data-guid="${question.guid}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`;
-            })
-            appendHtml += "</ul></li>";
-        });
-        appendHtml += "</ul><button onclick=\"checkAnswerLocally(this)\">Correct locally</button><button onclick=\"submitAnswer(this)\">Submit</button>"
-        let newDiv = document.createElement("div");
-        newDiv.innerHTML = appendHtml;
-        resourceElement.appendChild(newDiv);
-    });
+async function login() {
+    userID = document.getElementById("user-id").value
+    try {
+        let responseXml = await soapRequest("UsersGetUserGUID", {"lpszUserName": userID})
+        userGUID = responseXml.getElementsByTagName("AS:szUserGUID")[0].innerHTML
+    } catch (e) {
+        alert(e)
+    }
+}
+
+async function getAnswerSheet(element) {
+    const resourceElement = element.parentElement
+    const resourceGuid = resourceElement.dataset.guid
+    let responseXML = await soapRequest("GetPrivateData2", {"lpszKey": `AnswerSheet_${resourceGuid}`})
+    const data = JSON.parse(responseXML.getElementsByTagName("AS:szData")[0].innerHTML)
+    let appendHtml = "<ul>"
+    data.category.forEach((category) => {
+        appendHtml += `<li>${category.name}<ul>`
+        category.questions.forEach((question) => {
+            appendHtml += `<li>${question.index}<input type="text" class="question-input" data-guid="${question.guid}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
+        })
+        appendHtml += "</ul></li>"
+    })
+    appendHtml += "</ul><button onclick=\"checkAnswerLocally(this)\">Correct locally</button><button onclick=\"submitAnswer(this)\">Submit</button>"
+    let newDiv = document.createElement("div")
+    newDiv.innerHTML = appendHtml
+    resourceElement.appendChild(newDiv)
 }
 
 function submitAnswer(button) {
