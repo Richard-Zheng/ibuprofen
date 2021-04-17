@@ -3,7 +3,7 @@ let userID = ""
 let userGUID = ""
 
 function getSoapRequestBody(action, params) {
-    var res = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
+    let res = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
     <v:Header/>
     <v:Body>
         <${action} xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">`;
@@ -15,15 +15,6 @@ function getSoapRequestBody(action, params) {
         </${action}>
     </v:Body></v:Envelope>`;
     return res;
-}
-
-function getSubmitAnswerRequest(questionGuid, answer, onload) {
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", hostUrl + "/restfuldatasource/answersheetstudentanswer/" + questionGuid);
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-    xhr.addEventListener("load", onload);
-    xhr.send(JSON.stringify(answer));
-    return xhr
 }
 
 async function soapRequest(action, params) {
@@ -57,25 +48,21 @@ async function getAnswerSheet(element) {
     data.category.forEach((category) => {
         appendHtml += `<li>${category.name}<ul>`
         category.questions.forEach((question) => {
-            appendHtml += `<li>${question.index}<input type="text" class="question-input" data-guid="${question.guid}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
+            appendHtml += `<li>${question.index}<input type="text" class="question-input" onkeyup="onQuestionInputKeyUp(this)" data-type="${question.type}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
         })
         appendHtml += "</ul></li>"
     })
-    appendHtml += "</ul><button onclick=\"checkAnswerLocally(this)\">Correct locally</button><button onclick=\"submitAnswer(this)\">Submit</button>"
+    appendHtml += "</ul><button onclick=\"checkAnswerLocally(this)\">Correct locally</button>"
     let newDiv = document.createElement("div")
     newDiv.innerHTML = appendHtml
     resourceElement.appendChild(newDiv)
 }
 
-function submitAnswer(button) {
-    let questionInputs = button.parentElement.getElementsByClassName("question-input")
-    for (let questionInput of questionInputs) {
-        if (questionInput.value === "") {
-            continue;
-        }
-        let xhr = getSubmitAnswerRequest(questionInput.dataset.guid, {"answerchoice":questionInput.value}, () => {
-            console.log(xhr.status)
-        })
+function onQuestionInputKeyUp(inputElement) {
+    inputElement.value = inputElement.value.toUpperCase()
+    switch (inputElement.dataset.type) {
+        case "1":
+            inputElement.parentElement.nextElementSibling.getElementsByClassName("question-input")[0].focus()
     }
 }
 
