@@ -48,7 +48,7 @@ async function getAnswerSheet(element) {
     data.category.forEach((category) => {
         appendHtml += `<li>${category.name}<ul>`
         category.questions.forEach((question) => {
-            appendHtml += `<li>${question.index}<input type="text" class="question-input" oninput="onQuestionInput(this)" onkeydown="onQuestionInputKeyDown(this)" data-type="${question.type}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
+            appendHtml += `<li>${question.index}<input type="text" class="question-input" oninput="onQuestionInput(this)" onkeydown="onQuestionInputKeyDown(this, event)" data-type="${question.type}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
         })
         appendHtml += "</ul></li>"
     })
@@ -58,8 +58,8 @@ async function getAnswerSheet(element) {
     resourceElement.appendChild(newDiv)
 }
 
-function onQuestionInputKeyDown(inputElement) {
-    switch (inputElement.event.keyCode) {
+function onQuestionInputKeyDown(inputElement, event) {
+    switch (event.keyCode) {
         case 8: // BackSpace
             if (inputElement.value === "") {
                 inputElement.parentElement.previousElementSibling.getElementsByClassName("question-input")[0].focus()
@@ -72,6 +72,9 @@ function onQuestionInputKeyDown(inputElement) {
 
 function onQuestionInput(inputElement) {
     inputElement.value = inputElement.value.toUpperCase().replace(/[^a-zA-Z]/g,'')
+    if (inputElement.value === "") {
+        return
+    }
     switch (inputElement.dataset.type) {
         case "1":
             inputElement.value = inputElement.value.charAt(inputElement.value.length-1)
