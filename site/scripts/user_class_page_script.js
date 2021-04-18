@@ -48,7 +48,7 @@ async function getAnswerSheet(element) {
     data.category.forEach((category) => {
         appendHtml += `<li>${category.name}<ul>`
         category.questions.forEach((question) => {
-            appendHtml += `<li>${question.index}<input type="text" class="question-input" oninput="onQuestionInput(this)" data-type="${question.type}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
+            appendHtml += `<li>${question.index}<input type="text" class="question-input" oninput="onQuestionInput(this)" onkeydown="onQuestionInputKeyDown(this)" data-type="${question.type}" data-correctanswer="${question.correctanswer}">(${question.score})</li>`
         })
         appendHtml += "</ul></li>"
     })
@@ -56,6 +56,18 @@ async function getAnswerSheet(element) {
     let newDiv = document.createElement("div")
     newDiv.innerHTML = appendHtml
     resourceElement.appendChild(newDiv)
+}
+
+function onQuestionInputKeyDown(inputElement) {
+    switch (inputElement.event.keyCode) {
+        case 8: // BackSpace
+            if (inputElement.value === "") {
+                inputElement.parentElement.previousElementSibling.getElementsByClassName("question-input")[0].focus()
+            }
+            break
+        case 13: // enter
+            inputElement.parentElement.nextElementSibling.getElementsByClassName("question-input")[0].focus()
+    }
 }
 
 function onQuestionInput(inputElement) {
