@@ -18,8 +18,6 @@ index_to_subject_name = {
     "101": "课堂实录",
     "102": "重要通知",
 }
-with Path('site/scripts/user_class_page_script.js').open(mode='r') as f:
-    user_class_page_script = f.read()
 
 
 def generate_index_html(user_classes: list, user_class_to_href):
@@ -81,6 +79,7 @@ def generate_user_class_html(user_class):
                                                 a('PDF')
                                     a.br()
                                     a.button(onclick='getAnswerSheet(this)', _t='答题卡')
-            with a.script():
-                a(user_class_page_script)
+            with a.script(src='https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/soap.js'):
+            with a.script(src='https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/api.js'):
+            with a.script(src='https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/user-class-page-script.js'):
     return str(a)
