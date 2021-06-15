@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+
+<head>
+  <meta charset="UTF-8">
+  <title>IM Service</title>
+</head>
+
+<body>
+  <div id="user-login">
+    <label for="user-id">用户名:</label>
+    <input id="user-id" type="text" />
+    <label for="user-password">密码:</label>
+    <input id="user-password" type="password" />
+    <input onclick="login(event)" type="submit" value="登录" />
+  </div>
+  <div id="status">
+    当前状态：未连接
+  </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/soap.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/api.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/im-service-page-script.js"></script>
+
+</html>
