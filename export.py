@@ -57,7 +57,7 @@ def generate_user_class_html(user_class):
             with a.div(id='user-login'):
                 a.label(for_='user-id', _t='用户名:')
                 a.input(id='user-id', type='text')
-                a.input(onclick='login()', type='submit', value='登录')
+                a.input(onclick='login(document.getElementById("user-id").value)', type='submit', value='登录')
             with a.ul():
                 for record in reversed(user_class.lesson_schedules):
                     if not 'title' in record:

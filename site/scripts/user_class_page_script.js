@@ -2,43 +2,6 @@ const hostUrl = `${window.location.protocol}//${window.location.host}`;
 let userID = ""
 let userGUID = ""
 
-function getSoapRequestBody(action, params) {
-    let res = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
-    <v:Header/>
-    <v:Body>
-        <${action} xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">`;
-    for (let key in params) {
-        res += `
-            <${key} i:type="d:${typeof params[key]}">${params[key]}</${key}>`
-    }
-    res += `
-        </${action}>
-    </v:Body></v:Envelope>`;
-    return res;
-}
-
-async function soapRequest(action, params) {
-    let response = await fetch(hostUrl + "/wmexam/wmstudyservice.WSDL", {
-        method: 'POST',
-        headers: {
-            "SOAPAction": `http://webservice.myi.cn/wmstudyservice/wsdl/${action}`,
-            "Content-type": "text/xml;charset=utf-8",
-        },
-        body: getSoapRequestBody(action, params),
-    })
-    return new window.DOMParser().parseFromString(await response.text(), "text/xml")
-}
-
-async function login() {
-    userID = document.getElementById("user-id").value
-    try {
-        let responseXml = await soapRequest("UsersGetUserGUID", {"lpszUserName": userID})
-        userGUID = responseXml.getElementsByTagName("AS:szUserGUID")[0].innerHTML
-    } catch (e) {
-        alert(e)
-    }
-}
-
 async function getAnswerSheet(element) {
     const resourceElement = element.parentElement
     const resourceGuid = resourceElement.dataset.guid
