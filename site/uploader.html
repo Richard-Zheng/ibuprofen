@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Test Class</title>
+</head>
+
+<body>
+  <input oninput="onFileInput()" type="file" id="fileinput">
+  <input type="text" name="filename" id="filenameinput">
+  <input onclick="onUpload(this)" type="submit" value="提交">
+</form>
+</body>
+<script>
+  const fileInput = document.getElementById("fileinput")
+  const fileNameInput = document.getElementById("filenameinput")
+  const hostUrl = `${window.location.protocol}//${window.location.host}`;
+
+  function onFileInput() {
+    fileNameInput.value = hostUrl + `/PutTemporaryStorage?filename=${fileInput.files[0].name}` 
+  }
+
+  async function onUpload(buttonElement) {
+    await fetch(fileNameInput.value, {
+      method: 'POST',
+      body: fileInput.files[0]
+    })
+    let newNode = document.createElement("a")
+    newNode.href = fileNameInput.value.replace("PutTemporaryStorage?filename=", "GetTemporaryStorage?filename=")
+    newNode.innerHTML = "已上传"
+    buttonElement.parentElement.appendChild(newNode)
+  }
+</script>
