@@ -1,42 +1,120 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/html">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Test Class</title>
+  <meta charset="UTF-8">
+  <title>Test Class</title>
 </head>
+
 <body>
-<label>
-  <input type="checkbox" name="category" value="0" onchange="onSubjectCheckboxChange()" checked="checked"/>
-语文</label>
-<label>
-  <input type="checkbox" name="category" value="1" onchange="onSubjectCheckboxChange()" checked="checked"/>
-数学</label>
-<label>
-  <input type="checkbox" name="category" value="2" onchange="onSubjectCheckboxChange()" checked="checked"/>
-英语</label>
-<label>
-  <input type="checkbox" name="category" value="3" onchange="onSubjectCheckboxChange()" checked="checked"/>
-物理</label>
-<label>
-  <input type="checkbox" name="category" value="4" onchange="onSubjectCheckboxChange()" checked="checked"/>
-化学</label>
-<label>
-  <input type="checkbox" name="category" value="5" onchange="onSubjectCheckboxChange()" checked="checked"/>
-历史</label>
-<label>
-  <input type="checkbox" name="category" value="6" onchange="onSubjectCheckboxChange()" checked="checked"/>
-地理</label>
-<label>
-  <input type="checkbox" name="category" value="7" onchange="onSubjectCheckboxChange()" checked="checked"/>
-政治</label>
-<label>
-  <input type="checkbox" name="category" value="8" onchange="onSubjectCheckboxChange()" checked="checked"/>
-生物</label>
-
-<p><button type="button" onclick="changeAll(true)">全选</button><button type="button" onclick="changeAll(false)">全不选</button></p>
-
-<div id="lesson-schedules">
-</div>
+  <div id="user-login">
+    <label for="user-id">用户名:</label>
+    <input id="user-id" type="text" />
+    <label for="user-password">密码:</label>
+    <input id="user-password" type="password" />
+    <input onclick="login(event)" type="submit" value="登录" />
+  </div>
 </body>
-<script src="scripts/user_class_page_script.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.0/spark-md5.min.js" integrity="sha512-5Cmi5XQym+beE9VUPBgqQnDiUhiY8iJU+uCUbZIdWFmDNI+9u3A7ntfO8fRkigdZCRrbM+DSpSHSXAuOn5Ajbg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
+<script>
+  const hostUrl = `https://gzzxws.lexuewang.cn:8013`;
+  let userID = ""
+  let userGUID = ""
+  async function login(event) {
+    userID = document.getElementById("user-id").value
+    password = document.getElementById("user-password").value
+    try {
+      let responseXml = await soapRequest('UsersLoginJson', {
+                'lpszUserName': userID,
+                'lpszPasswordMD5': "e10adc3949ba59abbe56e057f20f883e",
+                'lpszHardwareKey': `ClientVersion: 5.2.3.52405
+ClientSign: 308203253082020da00302010202040966f52d300d06092a864886f70d01010b05003042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e3020170d3132313231313130313133355a180f32303632313132393130313133355a3042310b300906035504061302434e310f300d060355040713064e696e67426f31223020060355040a13194e696e67426f2052756959694b654a6920436f2e204c74642e30820122300d06092a864886f70d01010105000382010f003082010a0282010100abf2c60e5fcb7776da3d22c3180e284da9c4e715cec2736646da086cbf979a7f74bc147167f0f32ef0c52458e9183f0dd9571d7971e49564c00fbfd30bef3ca9a2d52bffcd0142c72e10fac158cb62c7bc7e9e17381a555ad7d39a24a470584a0e6aafdce2e4d6877847b15cbf4de89e3e4e71b11dca9920843ccc055acf8781db29bdaf3f06e16f055bf579a35ae3adb4d1149f8d43d90add54596acef8e4a28905f9f19fc0aa7fda9e8d56aa63db5d8d5e0fc4c536629f0a25a44429c699318329af6a3e869dd5e8289c78f55d14563559ffc9ccbf71fac5a03e13a3ee1fb8fc3857d10d5d3990bf9b84cd6fa555eb17a74809a7bb501e953a639104146adb0203010001a321301f301d0603551d0e04160414da4b4d8147840ff4b03f10fc5dd534bb133204e6300d06092a864886f70d01010b05000382010100801b8d796b90ab7a711a88f762c015158d75f1ae5caf969767131e6980ebe7f194ce33750902e6aa561f33d76d37f4482ff22cccbf9d5fecb6ed8e3f278fd1f988ea85ae30f8579d4afe710378b3ccb9cb41beaddef22fb3d128d9d61cfcb3cb05d32ab3b2c4524815bfc9a53c8e5ee3ad4589dc888bcdbdaf9270268eb176ff2d43c2fd236b5bf4ef8ffa8dd920d1583d70f971b988ee4054e1f739ea71510ee7172546ffcda31e6b270178f91086db9ff1051dedf453a6bad4f9b432d362bbe173fd1cc7350853fddd552a27a82fdfaf98e5b08186a03ffc6e187387e4bbd52195126c7c6cec6ab07fd5aadc43a0edb7826b237ba8c8aa443f132516fe89ba
+ClientPath: /data/app/com.netspace.myipad/base.apk
+ClientMD5: deea8ea52146dc7bbf9dd9afaac5992a`})
+      user = JSON.parse(responseXml.getElementsByTagName("AS:szLoginJson")[0].innerHTML)
+    } catch (e) {
+      alert(e)
+    }
+    let messageWaitUrl = hostUrl + `/WaitResponse?clientid=myipad_${userID}&version=5.2.3.52303&enablehistroy=true&sessionid=${user.sessionid}&ssid=null&ip=null&alias=`
+    msgResponse = await fetch(messageWaitUrl)
+    reader = msgResponse.body.getReader()
+    while (true) {
+      console.log(Utf8ArrayToStr((await reader.read()).value))
+    }
+    
+  }
+
+// http://www.onicos.com/staff/iz/amuse/javascript/expert/utf.txt
+
+/* utf.js - UTF-8 <=> UTF-16 convertion
+ *
+ * Copyright (C) 1999 Masanao Izumo <iz@onicos.co.jp>
+ * Version: 1.0
+ * LastModified: Dec 25 1999
+ * This library is free.  You can redistribute it and/or modify it.
+ */
+
+function Utf8ArrayToStr(array) {
+    var out, i, len, c;
+    var char2, char3;
+
+    out = "";
+    len = array.length;
+    i = 0;
+    while(i < len) {
+    c = array[i++];
+    switch(c >> 4)
+    { 
+      case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
+        // 0xxxxxxx
+        out += String.fromCharCode(c);
+        break;
+      case 12: case 13:
+        // 110x xxxx   10xx xxxx
+        char2 = array[i++];
+        out += String.fromCharCode(((c & 0x1F) << 6) | (char2 & 0x3F));
+        break;
+      case 14:
+        // 1110 xxxx  10xx xxxx  10xx xxxx
+        char2 = array[i++];
+        char3 = array[i++];
+        out += String.fromCharCode(((c & 0x0F) << 12) |
+                       ((char2 & 0x3F) << 6) |
+                       ((char3 & 0x3F) << 0));
+        break;
+    }
+    }
+
+    return out;
+}
+
+  function getSoapRequestBody(action, params) {
+    let res = `<v:Envelope xmlns:v="http://schemas.xmlsoap.org/soap/envelope/" xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/">
+    <v:Header/>
+    <v:Body>
+        <${action} xmlns="http://webservice.myi.cn/wmstudyservice/wsdl/" id="o0" c:root="1">`;
+    for (let key in params) {
+      res += `
+            <${key} i:type="d:${typeof params[key]}">${params[key]}</${key}>`
+    }
+    res += `
+        </${action}>
+    </v:Body></v:Envelope>`;
+    return res;
+  }
+  async function soapRequest(action, params) {
+    let response = await fetch(hostUrl + "/wmexam/wmstudyservice.WSDL", {
+      method: 'POST',
+      headers: {
+        "SOAPAction": `http://webservice.myi.cn/wmstudyservice/wsdl/${action}`,
+        "Content-type": "text/xml;charset=utf-8",
+      },
+      body: getSoapRequestBody(action, params),
+    })
+    return new window.DOMParser().parseFromString(await response.text(), "text/xml")
+  }
+</script>
+
 </html>
