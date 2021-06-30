@@ -47,7 +47,6 @@ class UserSession:
             'User-Agent': 'ksoap2-android/2.6.0+',
             'SOAPAction': 'http://webservice.myi.cn/wmstudyservice/wsdl/' + action,
             'Content-Type': 'text/xml;charset=utf-8',
-            'Cookie': 'userguid=ffffffffffffffffffffffffffffffff;username=paduser;usergroupguid=ffffffffffffffffffffffffffffffff',
             'Accept-Encoding': 'gzip'
         }, data=param_to_request_body(action, param)) as response:
             return await response.text()
@@ -57,10 +56,11 @@ class UserSession:
             with self.data_path.open(mode='r') as f:
                 login_data = json.load(f)
         else:
-            login_data = json.loads(ET.fromstring(await self.fetch('UsersLoginJson', {
-                'lpszUserName': self.uid,
-                'lpszPasswordMD5': hashlib.md5(password.encode()).hexdigest(),
-                'lpszHardwareKey': config.HARDWARE_KEY,
+            guid = ET.fromstring(await self.fetch('UsersGetUserGUID', {
+                'lpszUserName': self.uid
+            }))[1][0][0].text
+            login_data = json.loads(ET.fromstring(await self.fetch('UsersGetUserInfoByGUID', {
+                'szUserGUID': guid,
             }))[1][0][0].text)
             with self.data_path.open(mode='w') as f:
                 json.dump(login_data, f)
