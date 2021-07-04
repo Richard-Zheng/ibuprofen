@@ -1,8 +1,10 @@
 import argparse
+import asyncio
 import os.path
-from urllib import request
 import re
 from pathlib import Path
+
+import aiohttp
 
 site_dir = Path('site')
 src_js_pattern = re.compile(r'<script[^>]src="[^>]*"></script>')
@@ -16,15 +18,27 @@ def fill_js_element(html_content: str, base_path: Path):
     return html_content
 
 
+async def upload_to_temp_storage(session, url, data):
+    async with session.post(url, data=data) as response:
+        return await response.text()
+
+
+async def main(args):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for html_path in site_dir.glob("*.html"):
+            with html_path.open(mode='r', encoding='utf-8') as f:
+                filename = os.path.split(f.name)[1]
+                url = 'https://{0}:{1}/PutTemporaryStorage?filename={2}'.format(args.hostname, args.port, filename)
+                tasks.append(asyncio.create_task(session.post(url, data=fill_js_element(f.read(), site_dir).encode('utf-8'))))
+        await asyncio.wait(tasks)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("hostname")
     parser.add_argument("-p", "--port", default='8003')
     args = parser.parse_args()
 
-    for html_path in site_dir.glob("*.html"):
-        with html_path.open(mode='r', encoding='utf-8') as f:
-            filename = os.path.split(f.name)[1]
-            url = 'https://{0}:{1}/PutTemporaryStorage?filename={2}'.format(args.hostname, args.port, filename)
-            with request.urlopen(request.Request(url), data=fill_js_element(f.read(), site_dir).encode('utf-8')) as response:
-                print('Status:', response.status, response.reason)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(args))
