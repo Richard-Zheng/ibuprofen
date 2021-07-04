@@ -19,8 +19,31 @@
   </div>
 </body>
 
-<script src="scripts/soap.js"></script>
 <script src="scripts/api.js"></script>
-<script src="scripts/im-service-page-script.js"></script>
+<script src="scripts/utils.js"></script>
+<script>
+const hostUrl = `${window.location.protocol}//${window.location.host}`;
+const statusDiv = document.getElementById("status")
+
+async function imLogin(event) {
+    let userID = document.getElementById("user-id").value
+    let password = document.getElementById("user-password").value
+
+    statusDiv.innerHTML = "当前状态：正在尝试登录..."
+    user = await login(userID)
+    if (user == null) {
+        statusDiv.innerHTML = "当前状态：登录遇到错误"
+    }
+
+    statusDiv.innerHTML = "当前状态：正在尝试连接消息系统..."
+    let messageWaitUrl = hostUrl + `/WaitResponse?clientid=myipad_${userID}&version=5.2.3.52303&enablehistroy=true&sessionid=${user.sessionid}&ssid=null&ip=null&alias=`
+    let msgResponse = await fetch(messageWaitUrl)
+    let reader = msgResponse.body.getReader()
+    statusDiv.innerHTML = "当前状态：消息系统已连接"
+    while (true) {
+        console.log(Utf8ArrayToStr((await reader.read()).value))
+    }
+}
+</script>
 
 </html>
