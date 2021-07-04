@@ -133,9 +133,9 @@ class UserClass:
             for record in root[1][0][0][0]:
                 self.szReturnXML += record[0].text + '=' + record[9].text + ';'
                 lesson_schedule = {
-                    "guid": record[0].text,
-                    "resourceguid": record[4].text,
-                    "syn_timestamp": record[9].text
+                    "guid": record.find('guid').text,
+                    "resourceguid": record.find('resourceguid').text,
+                    "syn_timestamp": record.find('syn_timestamp').text
                 }
                 self.lesson_schedules.append(lesson_schedule)
                 tasks.append(asyncio.create_task(us.get_lesson_schedule_details(lesson_schedule)))
