@@ -131,12 +131,12 @@ class UserClass:
             root = ET.fromstring(result)
             response_attr = root[1][0][0][0].attrib
             for record in root[1][0][0][0]:
-                self.szReturnXML += record[0].text + '=' + record[9].text + ';'
                 lesson_schedule = {
                     "guid": record.find('guid').text,
                     "resourceguid": record.find('resourceguid').text,
                     "syn_timestamp": record.find('syn_timestamp').text
                 }
+                self.szReturnXML += lesson_schedule['guid'] + '=' + lesson_schedule['syn_timestamp'] + ';'
                 self.lesson_schedules.append(lesson_schedule)
                 tasks.append(asyncio.create_task(us.get_lesson_schedule_details(lesson_schedule)))
         await asyncio.wait(tasks) if tasks else None
