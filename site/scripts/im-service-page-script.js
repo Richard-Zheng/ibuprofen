@@ -1,4 +1,4 @@
-const hostUrl = `https://gzzxws.lexuewang.cn:8013`;
+const hostUrl = `${window.location.protocol}//${window.location.host}`;
 const statusDiv = document.getElementById("status")
 
 async function imLogin(event) {
@@ -12,7 +12,7 @@ async function imLogin(event) {
     }
 
     statusDiv.innerHTML = "当前状态：正在尝试连接消息系统..."
-    let messageWaitUrl = hostUrl + `WaitResponse?clientid=myipad_${userID}&version=5.2.3.52303&enablehistroy=true&sessionid=${user.sessionid}&ssid=null&ip=null&alias=`
+    let messageWaitUrl = hostUrl + `/WaitResponse?clientid=myipad_${userID}&version=5.2.3.52303&enablehistroy=true&sessionid=${user.sessionid}&ssid=null&ip=null&alias=`
     let msgResponse = await fetch(messageWaitUrl)
     let reader = msgResponse.body.getReader()
     statusDiv.innerHTML = "当前状态：消息系统已连接"
