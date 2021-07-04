@@ -47,7 +47,8 @@ class UserSession:
             'User-Agent': 'ksoap2-android/2.6.0+',
             'SOAPAction': 'http://webservice.myi.cn/wmstudyservice/wsdl/' + action,
             'Content-Type': 'text/xml;charset=utf-8',
-            'Accept-Encoding': 'gzip'
+            'Accept-Encoding': 'gzip',
+            'Cookie': 'userguid=ffffffffffffffffffffffffffffffff'
         }, data=param_to_request_body(action, param)) as response:
             return await response.text()
 
