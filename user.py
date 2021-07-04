@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import hashlib
 import html
 import json
 import xml.etree.ElementTree as ET
@@ -8,7 +7,6 @@ from pathlib import Path
 
 import aiohttp
 
-import config
 import export
 
 data_dir = Path('data')
@@ -52,7 +50,7 @@ class UserSession:
         }, data=param_to_request_body(action, param)) as response:
             return await response.text()
 
-    async def get_user_classes(self, password):
+    async def get_user_classes(self):
         if self.data_path.exists():
             with self.data_path.open(mode='r') as f:
                 login_data = json.load(f)
@@ -75,19 +73,19 @@ class UserSession:
             'lpszResourceGUID': lesson_schedule['resourceguid']
         })
         try:
-            lesson_prepare_element = ET.fromstring(html.unescape(result))[1][0][0][0][0]
+            lesson_prepare_element = next(ET.fromstring(html.unescape(result)).iter('LessonsPrepare'))
             del lesson_prepare_element.attrib['guid']
             lesson_schedule.update(lesson_prepare_element.attrib)
         except:
             return
 
         file_resources = []
-        for ref in lesson_prepare_element[2]:
+        for ref in lesson_prepare_element.find('RefrenceResource').findall('Resource'):
             result = await self.fetch('GetResourceByGUID', {
                 'lpszResourceGUID': ref.attrib['guid']
             })
             try:
-                resource = ET.fromstring(html.unescape(result))[1][0][0][0][0]
+                resource = next(ET.fromstring(html.unescape(result)).iter('Resource'))
                 file_resources.append({'guid': ref.attrib['guid'], 'title': resource.attrib['title'],
                                        'ext': resource.attrib['mainFileExtName'],
                                        'fileURI': resource[2].attrib['fileURI']})
@@ -128,9 +126,9 @@ class UserClass:
                 'lpszLastSyncTime': '',
                 'szReturnXML': 'enablesegment=3;' + self.szReturnXML,
             }))
-            root = ET.fromstring(result)
-            response_attr = root[1][0][0][0].attrib
-            for record in root[1][0][0][0]:
+            records = next(ET.fromstring(result).iter('LessonsScheduleRecordData'))
+            response_attr = records.attrib
+            for record in records:
                 lesson_schedule = {
                     "guid": record.find('guid').text,
                     "resourceguid": record.find('resourceguid').text,
@@ -147,7 +145,7 @@ async def main(args):
     async with aiohttp.ClientSession() as session:
         username = args.username.split('@')
         us = UserSession(session, username[0], username[1])
-        user_classes = await us.get_user_classes(args.password if args.password else '123456')
+        user_classes = await us.get_user_classes()
         tasks = []
         for user_class in user_classes:
             tasks.append(asyncio.create_task(user_class.fetch_lesson_schedules_table(us)))
