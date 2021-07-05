@@ -79,7 +79,10 @@ def generate_user_class_html(user_class):
                                                 a('PDF')
                                     a.br()
                                     a.button(onclick='getAnswerSheet(this)', _t='答题卡')
-            a.script(src='https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/soap.js')
-            a.script(src='https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/api.js')
-            a.script(src='https://cdn.jsdelivr.net/gh/Richard-Zheng/ibuprofen/site/scripts/user-class-page-script.js')
+            with a.script():
+                with Path('site/scripts/api.js').open(mode='r') as f:
+                    a(f.read())
+            with a.script():
+                with Path('site/scripts/user-class-page-script.js').open(mode='r') as f:
+                    a(f.read())
     return str(a)
