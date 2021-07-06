@@ -47,7 +47,7 @@ class UserSession:
             'Content-Type': 'text/xml;charset=utf-8',
             'Accept-Encoding': 'gzip',
             'Cookie': 'userguid=ffffffffffffffffffffffffffffffff'
-        }, data=param_to_request_body(action, param)) as response:
+        }, data=param_to_request_body(action, param).encode('gbk')) as response:
             return await response.text()
 
     async def get_user_classes(self):
